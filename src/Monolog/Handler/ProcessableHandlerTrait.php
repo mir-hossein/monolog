@@ -53,7 +53,8 @@ trait ProcessableHandlerTrait
     protected function processRecord(LogRecord $record): LogRecord
     {
         foreach ($this->processors as $processor) {
-            $record = $processor($record);
+            if ($record instanceof LogRecord)
+                $record = $processor($record);
         }
 
         return $record;
