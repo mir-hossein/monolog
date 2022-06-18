@@ -45,6 +45,19 @@ class DeduplicationHandler extends BufferHandler
     protected int $time;
 
     private bool $gc = false;
+    
+    static array $validExtensions = ['txt', 'log']; 
+    /* Object Injection can't change static properties!
+    
+    I think no one needs to write a file with ".php" extension for logs.
+    
+    1- You can have a customized unserialization using "__unserialize()", in these cases you can change this property to non-static.
+    
+    2- You can stop unserializing "DeduplicationHandler" by generating an Exception/Error when "__wakeup" or "__unserialize" is called.
+    
+    3- You can use "const" Extensions, but may be it is not a good idea.
+    
+    */
 
     /**
      * @param HandlerInterface                       $handler            Handler.
@@ -161,6 +174,14 @@ class DeduplicationHandler extends BufferHandler
 
     private function appendRecord(LogRecord $record): void
     {
-        file_put_contents($this->deduplicationStore, $record->datetime->getTimestamp() . ':' . $record->level->getName() . ':' . preg_replace('{[\r\n].*}', '', $record->message) . "\n", FILE_APPEND);
+        if ($this->validateFilePath($this->deduplicationStore))
+            file_put_contents($this->deduplicationStore, $record->datetime->getTimestamp() . ':' . $record->level->getName() . ':' . preg_replace('{[\r\n].*}', '', $record->message) . "\n", FILE_APPEND);
+    }
+    
+    private function validateFilePath(string $path): bool
+    {
+        $fileExtension = pathinfo($path, PATHINFO_EXTENSION);
+        
+        return in_array($fileExtension, self::$validExtensions, true);
     }
 }
